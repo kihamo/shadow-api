@@ -38,19 +38,34 @@
         var procedure = $('#procedure');
         var result = $('#result');
         var args = $('#arg .panel-body');
+        var argsAdd = $('#arg-add');
+        var argsClear = $('#arg-clear');
+        var kwargsAdd = $('#kwarg-add');
+        var kwargsClear = $('#kwarg-clear');
         var kwargs = $('#kwarg .panel-body');
 
         function remove() {
             $('.remove').click(function () {
                 $(this).parent().remove();
+
+                if (args.is(':empty')){
+                    argsAdd.click();
+                }
+
+                if (kwargs.is(':empty')){
+                    kwargsAdd.click();
+                }
             });
         }
 
         $('table td').click(function () {
             procedure.val($(this).text())
+
+            argsClear.click();
+            kwargsClear.click();
         });
 
-        $('#arg-add').click(function () {
+        argsAdd.click(function () {
             var row = $('<div class="form-group form-inline">');
             row.append('<button type="button" class="btn btn-danger btn-small remove"><i class="fa fa-trash-o"></i></button>');
             row.append('<input type="text" class="form-control">');
@@ -58,7 +73,12 @@
             args.append(row);
             remove();
         });
-        $('#kwarg-add').click(function () {
+        argsClear.click(function () {
+            args.empty();
+            argsAdd.click();
+        });
+
+        kwargsAdd.click(function () {
             var row = $('<div class="form-group form-inline">');
             row.append('<button type="button" class="btn btn-danger btn-small remove"><i class="fa fa-trash-o"></i></button>');
             row.append('<input type="text" class="form-control">');
@@ -66,6 +86,10 @@
 
             kwargs.append(row);
             remove();
+        });
+        kwargsClear.click(function () {
+            kwargs.empty();
+            kwargsAdd.click();
         });
 
         $('#call').submit(function () {
@@ -130,19 +154,20 @@
                     <div id="arg" class="panel panel-default">
                         <div class="panel-heading">Args
                             <div class="btn-group pull-right">
-                                <button type="button" class="btn btn-default btn-xs" id="arg-add">
+                                <button type="button" class="btn btn-success btn-xs" id="arg-add">
                                     <i class="fa fa-plus"></i>
+                                </button>
+                                <button type="button" class="btn btn-danger btn-xs" id="arg-clear">
+                                    <i class="fa fa-trash-o"></i>
                                 </button>
                             </div>
                         </div>
                         <div class="panel-body">
-                            <div class="form-group">
-                                <div class="form-group form-inline">
-                                    <button type="button" class="btn btn-danger btn-small remove">
-                                        <i class="fa fa-trash-o"></i>
-                                    </button>
-                                    <input type="text" class="form-control">
-                                </div>
+                            <div class="form-group form-inline">
+                                <button type="button" class="btn btn-danger btn-small remove">
+                                    <i class="fa fa-trash-o"></i>
+                                </button>
+                                <input type="text" class="form-control">
                             </div>
                         </div>
                     </div>
@@ -152,8 +177,11 @@
                         <div class="panel panel-default">
                             <div class="panel-heading">Kwargs
                                 <div class="btn-group pull-right">
-                                    <button type="button" class="btn btn-default btn-xs" id="kwarg-add">
+                                    <button type="button" class="btn btn-success btn-xs" id="kwarg-add">
                                         <i class="fa fa-plus"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-danger btn-xs" id="kwarg-clear">
+                                        <i class="fa fa-trash-o"></i>
                                     </button>
                                 </div>
                             </div>

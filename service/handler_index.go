@@ -13,8 +13,8 @@ type IndexHandler struct {
 
 func (h *IndexHandler) Handle() {
 	h.SetTemplate("index.tpl.html")
-	h.View.Context["PageTitle"] = "Api"
-	h.View.Context["PageHeader"] = "Api"
+	h.SetPageTitle("Api")
+	h.SetPageHeader("Api")
 
 	service := h.Service.(*ApiService)
 
@@ -24,6 +24,6 @@ func (h *IndexHandler) Handle() {
 		host = s[0]
 	}
 
-	h.View.Context["ApiUrl"] = fmt.Sprintf("ws://%s:%d/", host, service.config.GetInt64("api.port"))
-	h.View.Context["Procedures"] = service.GetProcedures()
+	h.SetVar("ApiUrl", fmt.Sprintf("ws://%s:%d/", host, service.config.GetInt64("api.port")))
+	h.SetVar("Procedures", service.GetProcedures())
 }
