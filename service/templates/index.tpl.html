@@ -106,6 +106,10 @@
                     } catch (e) {
                     }
 
+                    if (typeof value == 'number') {
+                        value = '' + value;
+                    }
+
                     a.push(value);
                 }
             });
@@ -117,6 +121,10 @@
                     try {
                         value = JSON.parse(value);
                     } catch (e) {
+                    }
+
+                    if (typeof value == 'number') {
+                        value = '' + value;
                     }
 
                     k[key] = value;
