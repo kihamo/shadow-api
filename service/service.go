@@ -153,14 +153,18 @@ func (s *ApiService) GetProcedures() []ApiProcedure {
 	return s.procedures
 }
 
-func (s *ApiService) HasProcedure(procedure string) bool {
+func (s *ApiService) GetProcedure(procedure string) ApiProcedure {
 	for _, p := range s.procedures {
 		if p.GetName() == procedure {
-			return true
+			return p
 		}
 	}
 
-	return false
+	return nil
+}
+
+func (s *ApiService) HasProcedure(procedure string) bool {
+	return s.GetProcedure(procedure) != nil
 }
 
 func (s *ApiService) GetClient() (*turnpike.Client, error) {
