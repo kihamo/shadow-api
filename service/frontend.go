@@ -7,9 +7,10 @@ import (
 
 func (s *ApiService) GetTemplates() *assetfs.AssetFS {
 	return &assetfs.AssetFS{
-		Asset:    Asset,
-		AssetDir: AssetDir,
-		Prefix:   "templates",
+		Asset:     Asset,
+		AssetDir:  AssetDir,
+		AssetInfo: AssetInfo,
+		Prefix:    "templates",
 	}
 }
 
@@ -23,9 +24,10 @@ func (s *ApiService) GetFrontendMenu() *frontend.FrontendMenu {
 
 func (s *ApiService) SetFrontendHandlers(router *frontend.Router) {
 	router.ServeFiles("/js/api/*filepath", &assetfs.AssetFS{
-		Asset:    Asset,
-		AssetDir: AssetDir,
-		Prefix:   "public/js",
+		Asset:     Asset,
+		AssetDir:  AssetDir,
+		AssetInfo: AssetInfo,
+		Prefix:    "public/js",
 	})
 
 	router.GET(s, "/api", &IndexHandler{})
