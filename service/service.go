@@ -1,6 +1,7 @@
 package service
 
 import (
+	"crypto/tls"
 	"fmt"
 	"net/http"
 	"os"
@@ -170,7 +171,7 @@ func (s *ApiService) HasProcedure(procedure string) bool {
 func (s *ApiService) GetClient() (*turnpike.Client, error) {
 	addr := fmt.Sprintf("ws://%s:%d/", s.config.GetString("api.host"), s.config.GetInt64("api.port"))
 
-	client, err := turnpike.NewWebsocketClient(turnpike.JSON, addr)
+	client, err := turnpike.NewWebsocketClient(turnpike.JSON, addr, &tls.Config{})
 	if err != nil {
 		return nil, err
 	}
