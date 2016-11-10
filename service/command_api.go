@@ -80,7 +80,7 @@ func (c *ApiCommand) Run(m *sl.MessageEvent, args ...string) {
 	}
 
 	if err == nil {
-		result, err = c.client.Call(args[0], apiArgs, apiKwargs)
+		result, err = c.client.Call(args[0], make(map[string]interface{}), apiArgs, apiKwargs)
 	}
 
 	if err != nil {
