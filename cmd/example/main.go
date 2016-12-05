@@ -6,6 +6,8 @@ import (
 	"github.com/kihamo/shadow"
 	"github.com/kihamo/shadow-api/service"
 	"github.com/kihamo/shadow/resource"
+	"github.com/kihamo/shadow/resource/alerts"
+	"github.com/kihamo/shadow/resource/metrics"
 	"github.com/kihamo/shadow/service/frontend"
 	"github.com/kihamo/shadow/service/system"
 )
@@ -21,13 +23,15 @@ func main() {
 			new(resource.Config),
 			new(resource.Logger),
 			new(resource.Template),
+			new(alerts.Alerts),
+			new(metrics.Metrics),
 		},
 		[]shadow.Service{
 			new(system.SystemService),
 			new(frontend.FrontendService),
 			new(service.ApiService),
 		},
-		"Api Example",
+		"Api",
 		Version,
 		Build,
 	)

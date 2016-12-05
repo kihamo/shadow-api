@@ -12,11 +12,11 @@ import (
 	"compress/gzip"
 	"fmt"
 	"io"
-	"strings"
-	"os"
-	"time"
 	"io/ioutil"
+	"os"
 	"path/filepath"
+	"strings"
+	"time"
 )
 
 func bindataRead(data []byte, name string) ([]byte, error) {
@@ -45,9 +45,9 @@ type asset struct {
 }
 
 type bindataFileInfo struct {
-	name string
-	size int64
-	mode os.FileMode
+	name    string
+	size    int64
+	mode    os.FileMode
 	modTime time.Time
 }
 
@@ -85,8 +85,8 @@ func templatesIndexTplHtml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "templates/index.tpl.html", size: 8151, mode: os.FileMode(420), modTime: time.Unix(1443597035, 0)}
-	a := &asset{bytes: bytes, info:  info}
+	info := bindataFileInfo{name: "templates/index.tpl.html", size: 8151, mode: os.FileMode(420), modTime: time.Unix(1480329249, 0)}
+	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
 
@@ -105,8 +105,8 @@ func publicJsAutobahnMinJs() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "public/js/autobahn.min.js", size: 134133, mode: os.FileMode(420), modTime: time.Unix(1425233451, 0)}
-	a := &asset{bytes: bytes, info:  info}
+	info := bindataFileInfo{name: "public/js/autobahn.min.js", size: 134133, mode: os.FileMode(420), modTime: time.Unix(1480329249, 0)}
+	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
 
@@ -129,7 +129,7 @@ func Asset(name string) ([]byte, error) {
 // It simplifies safe initialization of global variables.
 func MustAsset(name string) []byte {
 	a, err := Asset(name)
-	if (err != nil) {
+	if err != nil {
 		panic("asset: Asset(" + name + "): " + err.Error())
 	}
 
@@ -202,73 +202,71 @@ func AssetDir(name string) ([]string, error) {
 }
 
 type bintree struct {
-	Func func() (*asset, error)
+	Func     func() (*asset, error)
 	Children map[string]*bintree
 }
 var _bintree = &bintree{nil, map[string]*bintree{
 	"public": &bintree{nil, map[string]*bintree{
 		"js": &bintree{nil, map[string]*bintree{
-			"autobahn.min.js": &bintree{publicJsAutobahnMinJs, map[string]*bintree{
-			}},
+			"autobahn.min.js": &bintree{publicJsAutobahnMinJs, map[string]*bintree{}},
 		}},
 	}},
 	"templates": &bintree{nil, map[string]*bintree{
-		"index.tpl.html": &bintree{templatesIndexTplHtml, map[string]*bintree{
-		}},
+		"index.tpl.html": &bintree{templatesIndexTplHtml, map[string]*bintree{}},
 	}},
 }}
 
 // RestoreAsset restores an asset under the given directory
 func RestoreAsset(dir, name string) error {
-        data, err := Asset(name)
-        if err != nil {
-                return err
-        }
-        info, err := AssetInfo(name)
-        if err != nil {
-                return err
-        }
-        err = os.MkdirAll(_filePath(dir, filepath.Dir(name)), os.FileMode(0755))
-        if err != nil {
-                return err
-        }
-        err = ioutil.WriteFile(_filePath(dir, name), data, info.Mode())
-        if err != nil {
-                return err
-        }
-        err = os.Chtimes(_filePath(dir, name), info.ModTime(), info.ModTime())
-        if err != nil {
-                return err
-        }
-        return nil
+	data, err := Asset(name)
+	if err != nil {
+		return err
+	}
+	info, err := AssetInfo(name)
+	if err != nil {
+		return err
+	}
+	err = os.MkdirAll(_filePath(dir, filepath.Dir(name)), os.FileMode(0755))
+	if err != nil {
+		return err
+	}
+	err = ioutil.WriteFile(_filePath(dir, name), data, info.Mode())
+	if err != nil {
+		return err
+	}
+	err = os.Chtimes(_filePath(dir, name), info.ModTime(), info.ModTime())
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // RestoreAssets restores an asset under the given directory recursively
 func RestoreAssets(dir, name string) error {
-        children, err := AssetDir(name)
-        // File
-        if err != nil {
-                return RestoreAsset(dir, name)
-        }
-        // Dir
-        for _, child := range children {
-                err = RestoreAssets(dir, filepath.Join(name, child))
-                if err != nil {
-                        return err
-                }
-        }
-        return nil
+	children, err := AssetDir(name)
+	// File
+	if err != nil {
+		return RestoreAsset(dir, name)
+	}
+	// Dir
+	for _, child := range children {
+		err = RestoreAssets(dir, filepath.Join(name, child))
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func _filePath(dir, name string) string {
-        cannonicalName := strings.Replace(name, "\\", "/", -1)
-        return filepath.Join(append([]string{dir}, strings.Split(cannonicalName, "/")...)...)
+	cannonicalName := strings.Replace(name, "\\", "/", -1)
+	return filepath.Join(append([]string{dir}, strings.Split(cannonicalName, "/")...)...)
 }
 
 
 func assetFS() *assetfs.AssetFS {
 	for k := range _bintree.Children {
-		return &assetfs.AssetFS{Asset: Asset, AssetDir: AssetDir, Prefix: k}
+		return &assetfs.AssetFS{Asset: Asset, AssetDir: AssetDir, AssetInfo: AssetInfo, Prefix: k}
 	}
 	panic("unreachable")
 }

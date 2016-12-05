@@ -4,11 +4,14 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strings"
 	"sync"
+	"time"
 
 	"github.com/Sirupsen/logrus"
 	"github.com/kihamo/shadow"
 	"github.com/kihamo/shadow/resource"
+	"github.com/kihamo/shadow/resource/metrics"
 	"gopkg.in/jcelliott/turnpike.v2"
 )
 
@@ -20,6 +23,7 @@ type ApiService struct {
 	application *shadow.Application
 	config      *resource.Config
 	logger      *logrus.Entry
+	metrics     *metrics.Metrics
 	procedures  []ApiProcedure
 }
 
@@ -40,8 +44,12 @@ func (s *ApiService) Init(a *shadow.Application) error {
 	if err != nil {
 		return err
 	}
-	logger := resourceLogger.(*resource.Logger)
-	s.logger = logger.Get(s.GetName())
+	s.logger = resourceLogger.(*resource.Logger).Get(s.GetName())
+
+	if a.HasResource("metrics") {
+		resourceMetrics, _ := a.GetResource("metrics")
+		s.metrics = resourceMetrics.(*metrics.Metrics)
+	}
 
 	return nil
 }
@@ -75,6 +83,16 @@ func (s *ApiService) Run(wg *sync.WaitGroup) error {
 				procedure.Init(service, s.application)
 				procedureWrapper := func(procedure ApiProcedure) turnpike.BasicMethodHandler {
 					return func(args []interface{}, kwargs map[string]interface{}) *turnpike.CallResult {
+						beforeTime := time.Now()
+						defer func() {
+							if s.metrics != nil {
+								name := strings.Replace(procedure.GetName(), ".", "_", -1)
+
+								s.metrics.NewTimer(fmt.Sprintf(MetricApiProcedureExecuteTime, name)).
+									UpdateSince(beforeTime)
+							}
+						}()
+
 						if autoValidation, ok := procedure.(ApiProcedureRequest); ok {
 							out := autoValidation.GetRequest()
 							request := NewRequest(out, args, kwargs)
