@@ -1,5 +1,5 @@
 package service
 
 const (
-	MetricApiProcedureExecuteTime = "api.procedure.%s.execute_time"
+	MetricApiProcedureExecuteTime = "api.procedure.execute_time"
 )

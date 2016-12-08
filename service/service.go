@@ -4,14 +4,14 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"strings"
 	"sync"
 	"time"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/kihamo/shadow"
-	"github.com/kihamo/shadow/resource"
+	"github.com/kihamo/shadow/resource/config"
+	"github.com/kihamo/shadow/resource/logger"
 	"github.com/kihamo/shadow/resource/metrics"
+	"github.com/rs/xlog"
 	"gopkg.in/jcelliott/turnpike.v2"
 )
 
@@ -21,10 +21,10 @@ type ServiceApiHandler interface {
 
 type ApiService struct {
 	application *shadow.Application
-	config      *resource.Config
-	logger      *logrus.Entry
-	metrics     *metrics.Metrics
-	procedures  []ApiProcedure
+	config      *config.Resource
+	logger      xlog.Logger
+
+	procedures []ApiProcedure
 }
 
 func (s *ApiService) GetName() string {
@@ -38,18 +38,13 @@ func (s *ApiService) Init(a *shadow.Application) error {
 	if err != nil {
 		return err
 	}
-	s.config = resourceConfig.(*resource.Config)
+	s.config = resourceConfig.(*config.Resource)
 
 	resourceLogger, err := a.GetResource("logger")
 	if err != nil {
 		return err
 	}
-	s.logger = resourceLogger.(*resource.Logger).Get(s.GetName())
-
-	if a.HasResource("metrics") {
-		resourceMetrics, _ := a.GetResource("metrics")
-		s.metrics = resourceMetrics.(*metrics.Metrics)
-	}
+	s.logger = resourceLogger.(*logger.Resource).Get(s.GetName())
 
 	return nil
 }
@@ -65,31 +60,41 @@ func (s *ApiService) Run(wg *sync.WaitGroup) error {
 		return err
 	}
 
+	var baseMetricApiProcedureExecuteTime metrics.Timer
+
+	resourceMetrics, err := s.application.GetResource("metrics")
+	if err == nil {
+		baseMetricApiProcedureExecuteTime = resourceMetrics.(*metrics.Resource).NewTimer(MetricApiProcedureExecuteTime)
+	}
+
 	for _, service := range s.application.GetServices() {
 		if serviceCast, ok := service.(ServiceApiHandler); ok {
 			for _, procedure := range serviceCast.GetApiProcedures() {
 				name := procedure.GetName()
 
-				logEntry := s.logger.WithFields(logrus.Fields{
-					"procedure": name,
-					"service":   service.GetName(),
-				})
-
 				if s.HasProcedure(name) {
-					logEntry.Warn("Procedure already exists. Ignore procedure.")
+					if s.logger != nil {
+						s.logger.Warn("Procedure already exists. Ignore procedure.", xlog.F{
+							"procedure": name,
+							"service":   service.GetName(),
+						})
+					}
+
 					continue
 				}
 
 				procedure.Init(service, s.application)
 				procedureWrapper := func(procedure ApiProcedure) turnpike.BasicMethodHandler {
+					var metricApiProcedureExecuteTime metrics.Timer
+					if baseMetricApiProcedureExecuteTime != nil {
+						metricApiProcedureExecuteTime = baseMetricApiProcedureExecuteTime.With("procedure", procedure.GetName())
+					}
+
 					return func(args []interface{}, kwargs map[string]interface{}) *turnpike.CallResult {
 						beforeTime := time.Now()
 						defer func() {
-							if s.metrics != nil {
-								name := strings.Replace(procedure.GetName(), ".", "_", -1)
-
-								s.metrics.NewTimer(fmt.Sprintf(MetricApiProcedureExecuteTime, name)).
-									UpdateSince(beforeTime)
+							if metricApiProcedureExecuteTime != nil {
+								metricApiProcedureExecuteTime.ObserveDurationByTime(beforeTime)
 							}
 						}()
 
@@ -112,7 +117,12 @@ func (s *ApiService) Run(wg *sync.WaitGroup) error {
 							return simple.Run(args, kwargs)
 						}
 
-						logEntry.WithField("error", err.Error()).Error("Error procedure interace")
+						s.logger.Error("Error procedure interace", xlog.F{
+							"procedure": name,
+							"service":   service.GetName(),
+							"error":     err.Error(),
+						})
+
 						return &turnpike.CallResult{
 							Err: turnpike.URI(ErrorUnknownProcedure),
 						}
@@ -120,10 +130,19 @@ func (s *ApiService) Run(wg *sync.WaitGroup) error {
 				}
 
 				if err = client.BasicRegister(name, procedureWrapper(procedure)); err != nil {
-					logEntry.WithField("error", err.Error()).Error("Error register api procedure")
+					if s.logger != nil {
+						s.logger.Error("Error register api procedure", xlog.F{
+							"procedure": name,
+							"service":   service.GetName(),
+							"error":     err.Error(),
+						})
+					}
 					// ignore error
-				} else {
-					logEntry.Debug("Register procedure")
+				} else if s.logger != nil {
+					s.logger.Debug("Register procedure", xlog.F{
+						"procedure": name,
+						"service":   service.GetName(),
+					})
 				}
 				s.procedures = append(s.procedures, procedure)
 			}
@@ -136,11 +155,11 @@ func (s *ApiService) Run(wg *sync.WaitGroup) error {
 		// TODO: ssl
 
 		addr := fmt.Sprintf("%s:%d", s.config.GetString("api.host"), s.config.GetInt64("api.port"))
-		fields := logrus.Fields{
+
+		s.logger.Info("Running service", xlog.F{
 			"addr": addr,
 			"pid":  os.Getpid(),
-		}
-		s.logger.WithFields(fields).Info("Running service")
+		})
 
 		mux := http.NewServeMux()
 		server := &http.Server{
