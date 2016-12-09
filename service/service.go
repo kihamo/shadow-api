@@ -40,16 +40,16 @@ func (s *ApiService) Init(a *shadow.Application) error {
 	}
 	s.config = resourceConfig.(*config.Resource)
 
-	resourceLogger, err := a.GetResource("logger")
-	if err != nil {
-		return err
-	}
-	s.logger = resourceLogger.(*logger.Resource).Get(s.GetName())
-
 	return nil
 }
 
 func (s *ApiService) Run(wg *sync.WaitGroup) error {
+	if resourceLogger, err := s.application.GetResource("logger"); err == nil {
+		s.logger = resourceLogger.(*logger.Resource).Get(s.GetName())
+	} else {
+		s.logger = xlog.NopLogger
+	}
+
 	if s.config.GetBool("debug") {
 		turnpike.Debug()
 	}
@@ -60,41 +60,32 @@ func (s *ApiService) Run(wg *sync.WaitGroup) error {
 		return err
 	}
 
-	var baseMetricApiProcedureExecuteTime metrics.Timer
-
-	resourceMetrics, err := s.application.GetResource("metrics")
-	if err == nil {
-		baseMetricApiProcedureExecuteTime = resourceMetrics.(*metrics.Resource).NewTimer(MetricApiProcedureExecuteTime)
-	}
-
 	for _, service := range s.application.GetServices() {
 		if serviceCast, ok := service.(ServiceApiHandler); ok {
 			for _, procedure := range serviceCast.GetApiProcedures() {
 				name := procedure.GetName()
 
 				if s.HasProcedure(name) {
-					if s.logger != nil {
-						s.logger.Warn("Procedure already exists. Ignore procedure.", xlog.F{
-							"procedure": name,
-							"service":   service.GetName(),
-						})
-					}
+					s.logger.Warn("Procedure already exists. Ignore procedure.", xlog.F{
+						"procedure": name,
+						"service":   service.GetName(),
+					})
 
 					continue
 				}
 
 				procedure.Init(service, s.application)
 				procedureWrapper := func(procedure ApiProcedure) turnpike.BasicMethodHandler {
-					var metricApiProcedureExecuteTime metrics.Timer
-					if baseMetricApiProcedureExecuteTime != nil {
-						metricApiProcedureExecuteTime = baseMetricApiProcedureExecuteTime.With("procedure", procedure.GetName())
+					var procedureMetricApiProcedureExecuteTime metrics.Timer
+					if metricApiProcedureExecuteTime != nil {
+						procedureMetricApiProcedureExecuteTime = metricApiProcedureExecuteTime.With("procedure", procedure.GetName())
 					}
 
 					return func(args []interface{}, kwargs map[string]interface{}) *turnpike.CallResult {
 						beforeTime := time.Now()
 						defer func() {
-							if metricApiProcedureExecuteTime != nil {
-								metricApiProcedureExecuteTime.ObserveDurationByTime(beforeTime)
+							if procedureMetricApiProcedureExecuteTime != nil {
+								procedureMetricApiProcedureExecuteTime.ObserveDurationByTime(beforeTime)
 							}
 						}()
 
@@ -130,15 +121,13 @@ func (s *ApiService) Run(wg *sync.WaitGroup) error {
 				}
 
 				if err = client.BasicRegister(name, procedureWrapper(procedure)); err != nil {
-					if s.logger != nil {
-						s.logger.Error("Error register api procedure", xlog.F{
-							"procedure": name,
-							"service":   service.GetName(),
-							"error":     err.Error(),
-						})
-					}
+					s.logger.Error("Error register api procedure", xlog.F{
+						"procedure": name,
+						"service":   service.GetName(),
+						"error":     err.Error(),
+					})
 					// ignore error
-				} else if s.logger != nil {
+				} else {
 					s.logger.Debug("Register procedure", xlog.F{
 						"procedure": name,
 						"service":   service.GetName(),
