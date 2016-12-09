@@ -1,6 +1,8 @@
 package service
 
 import (
+	"errors"
+
 	"github.com/kihamo/shadow"
 	"gopkg.in/jcelliott/turnpike.v2"
 )
@@ -11,7 +13,7 @@ const (
 )
 
 type ApiProcedure interface {
-	Init(shadow.Service, *shadow.Application)
+	Init(shadow.Service, *shadow.Application) error
 	GetName() string
 }
 
@@ -33,19 +35,18 @@ type AbstractApiProcedure struct {
 	ApiService  *ApiService
 }
 
-func (p *AbstractApiProcedure) Init(s shadow.Service, a *shadow.Application) {
+func (p *AbstractApiProcedure) Init(s shadow.Service, a *shadow.Application) error {
 	p.Application = a
 	p.Service = s
 
-	apiService, err := a.GetService("api")
-	if err == nil {
+	if apiService, err := a.GetService("api"); err == nil {
 		if castService, ok := apiService.(*ApiService); ok {
 			p.ApiService = castService
-			return
+			return nil
 		}
 	}
 
-	panic("Api service not found")
+	return errors.New("Api service not found")
 }
 
 func (p *AbstractApiProcedure) GetResult(args []interface{}, kwargs map[string]interface{}) *turnpike.CallResult {

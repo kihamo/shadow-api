@@ -11,7 +11,6 @@ import (
 	"github.com/kihamo/shadow/resource/config"
 	"github.com/kihamo/shadow/resource/logger"
 	"github.com/kihamo/shadow/resource/metrics"
-	"github.com/rs/xlog"
 	"gopkg.in/jcelliott/turnpike.v2"
 )
 
@@ -22,7 +21,7 @@ type ServiceApiHandler interface {
 type ApiService struct {
 	application *shadow.Application
 	config      *config.Resource
-	logger      xlog.Logger
+	logger      logger.Logger
 
 	procedures []ApiProcedure
 }
@@ -47,12 +46,10 @@ func (s *ApiService) Run(wg *sync.WaitGroup) error {
 	if resourceLogger, err := s.application.GetResource("logger"); err == nil {
 		s.logger = resourceLogger.(*logger.Resource).Get(s.GetName())
 	} else {
-		s.logger = xlog.NopLogger
+		s.logger = logger.NopLogger
 	}
 
-	if s.config.GetBool("debug") {
-		turnpike.Debug()
-	}
+	turnpike.SetLogger(s.logger)
 
 	handler := turnpike.NewBasicWebsocketServer(s.GetName())
 	client, err := handler.GetLocalClient(s.GetName(), nil)
@@ -66,7 +63,7 @@ func (s *ApiService) Run(wg *sync.WaitGroup) error {
 				name := procedure.GetName()
 
 				if s.HasProcedure(name) {
-					s.logger.Warn("Procedure already exists. Ignore procedure.", xlog.F{
+					s.logger.Warn("Procedure already exists. Ignore procedure.", map[string]interface{}{
 						"procedure": name,
 						"service":   service.GetName(),
 					})
@@ -74,7 +71,16 @@ func (s *ApiService) Run(wg *sync.WaitGroup) error {
 					continue
 				}
 
-				procedure.Init(service, s.application)
+				if err := procedure.Init(service, s.application); err != nil {
+					s.logger.Error("Procedure init failed", map[string]interface{}{
+						"procedure": name,
+						"service":   service.GetName(),
+						"error":     err.Error(),
+					})
+
+					return err
+				}
+
 				procedureWrapper := func(procedure ApiProcedure) turnpike.BasicMethodHandler {
 					var procedureMetricApiProcedureExecuteTime metrics.Timer
 					if metricApiProcedureExecuteTime != nil {
@@ -108,7 +114,7 @@ func (s *ApiService) Run(wg *sync.WaitGroup) error {
 							return simple.Run(args, kwargs)
 						}
 
-						s.logger.Error("Error procedure interace", xlog.F{
+						s.logger.Error("Error procedure interace", map[string]interface{}{
 							"procedure": name,
 							"service":   service.GetName(),
 							"error":     err.Error(),
@@ -121,14 +127,14 @@ func (s *ApiService) Run(wg *sync.WaitGroup) error {
 				}
 
 				if err = client.BasicRegister(name, procedureWrapper(procedure)); err != nil {
-					s.logger.Error("Error register api procedure", xlog.F{
+					s.logger.Error("Error register api procedure", map[string]interface{}{
 						"procedure": name,
 						"service":   service.GetName(),
 						"error":     err.Error(),
 					})
 					// ignore error
 				} else {
-					s.logger.Debug("Register procedure", xlog.F{
+					s.logger.Debug("Register procedure", map[string]interface{}{
 						"procedure": name,
 						"service":   service.GetName(),
 					})
@@ -145,7 +151,7 @@ func (s *ApiService) Run(wg *sync.WaitGroup) error {
 
 		addr := fmt.Sprintf("%s:%d", s.config.GetString("api.host"), s.config.GetInt64("api.port"))
 
-		s.logger.Info("Running service", xlog.F{
+		s.logger.Info("Running service", map[string]interface{}{
 			"addr": addr,
 			"pid":  os.Getpid(),
 		})
