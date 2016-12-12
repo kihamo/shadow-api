@@ -1,47 +1,46 @@
 package service
 
 import (
-	"fmt"
-	"os"
-
 	"github.com/kihamo/shadow/resource/config"
 )
 
+const (
+	ConfigApiHost          = "api.host"
+	ConfigApiPort          = "api.port"
+	ConfigApiSecureEnabled = "api.secure.enabled"
+	ConfigApiSecureCrt     = "api.secure.crt"
+	ConfigApiSecureKey     = "api.secure.key"
+)
+
 func (s *ApiService) GetConfigVariables() []config.Variable {
-	pathCrt := ""
-	pathKey := ""
-
-	dir, err := os.Getwd()
-	if err == nil {
-		pathCrt = fmt.Sprint(dir, "/server.crt")
-		pathKey = fmt.Sprint(dir, "/server.key")
-	}
-
 	return []config.Variable{
 		{
-			Key:   "api.host",
-			Value: "0.0.0.0",
-			Usage: "API socket host",
+			Key:     ConfigApiHost,
+			Default: "localhost",
+			Usage:   "API socket host",
+			Type:    config.ValueTypeString,
 		},
 		{
-			Key:   "api.port",
-			Value: 8001,
-			Usage: "API socket port",
+			Key:     ConfigApiPort,
+			Default: 8001,
+			Usage:   "API socket port",
+			Type:    config.ValueTypeInt,
 		},
 		{
-			Key:   "api.secure",
-			Value: false,
-			Usage: "API enable SSL",
+			Key:     ConfigApiSecureEnabled,
+			Default: false,
+			Usage:   "API enable SSL",
+			Type:    config.ValueTypeBool,
 		},
 		{
-			Key:   "api.secure-crt",
-			Value: pathCrt,
+			Key:   ConfigApiSecureCrt,
 			Usage: "API path to SSL crt file",
+			Type:  config.ValueTypeString,
 		},
 		{
-			Key:   "api.secure-key",
-			Value: pathKey,
+			Key:   ConfigApiSecureKey,
 			Usage: "API path to SSL key file",
+			Type:  config.ValueTypeString,
 		},
 	}
 }

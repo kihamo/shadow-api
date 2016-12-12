@@ -30,5 +30,8 @@ func (s *ApiService) SetFrontendHandlers(router *frontend.Router) {
 		Prefix:    "public/js",
 	})
 
-	router.GET(s, "/api", &IndexHandler{})
+	router.GET(s, "/api", &IndexHandler{
+		service: s,
+		config:  s.config,
+	})
 }
