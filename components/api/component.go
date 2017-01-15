@@ -1,4 +1,4 @@
-package service
+package api
 
 import (
 	"fmt"
@@ -8,9 +8,9 @@ import (
 	"time"
 
 	"github.com/kihamo/shadow"
-	"github.com/kihamo/shadow/resource/config"
-	"github.com/kihamo/shadow/resource/logger"
-	"github.com/kihamo/shadow/resource/metrics"
+	"github.com/kihamo/shadow/components/config"
+	"github.com/kihamo/shadow/components/logger"
+	"github.com/kihamo/shadow/components/metrics"
 	"gopkg.in/jcelliott/turnpike.v2"
 )
 
@@ -18,67 +18,57 @@ type ServiceApiHandler interface {
 	GetApiProcedures() []ApiProcedure
 }
 
-type ApiService struct {
-	application *shadow.Application
-	config      *config.Resource
+type Component struct {
+	application shadow.Application
+	config      *config.Component
 	logger      logger.Logger
 
 	procedures []ApiProcedure
 }
 
-func (s *ApiService) GetName() string {
+func (c *Component) GetName() string {
 	return "api"
 }
 
-func (s *ApiService) Init(a *shadow.Application) error {
-	s.application = a
+func (c *Component) GetVersion() string {
+	return "1.0.0"
+}
 
-	resourceConfig, err := a.GetResource("config")
+func (c *Component) Init(a shadow.Application) error {
+	cmpConfig, err := a.GetComponent("config")
 	if err != nil {
 		return err
 	}
-	s.config = resourceConfig.(*config.Resource)
+	c.config = cmpConfig.(*config.Component)
+
+	c.application = a
 
 	return nil
 }
 
-func (s *ApiService) Run(wg *sync.WaitGroup) error {
-	if resourceLogger, err := s.application.GetResource("logger"); err == nil {
-		s.logger = resourceLogger.(*logger.Resource).Get(s.GetName())
-	} else {
-		s.logger = logger.NopLogger
-	}
+func (c *Component) Run(wg *sync.WaitGroup) error {
+	c.logger = logger.NewOrNop(c.GetName(), c.application)
 
-	turnpike.SetLogger(s.logger)
+	turnpike.SetLogger(c.logger)
 
-	handler := turnpike.NewBasicWebsocketServer(s.GetName())
-	client, err := handler.GetLocalClient(s.GetName(), nil)
+	handler := turnpike.NewBasicWebsocketServer(c.GetName())
+	client, err := handler.GetLocalClient(c.GetName(), nil)
 	if err != nil {
 		return err
 	}
 
-	for _, service := range s.application.GetServices() {
-		if serviceCast, ok := service.(ServiceApiHandler); ok {
-			for _, procedure := range serviceCast.GetApiProcedures() {
+	for _, cmp := range c.application.GetComponents() {
+		if cmpApi, ok := cmp.(ServiceApiHandler); ok {
+			for _, procedure := range cmpApi.GetApiProcedures() {
 				name := procedure.GetName()
 
-				if s.HasProcedure(name) {
-					s.logger.Warn("Procedure already exists. Ignore procedure.", map[string]interface{}{
+				if c.HasProcedure(name) {
+					c.logger.Warn("Procedure already exists. Ignore procedure.", map[string]interface{}{
 						"procedure": name,
-						"service":   service.GetName(),
+						"service":   cmp.GetName(),
 					})
 
 					continue
-				}
-
-				if err := procedure.Init(service, s.application); err != nil {
-					s.logger.Error("Procedure init failed", map[string]interface{}{
-						"procedure": name,
-						"service":   service.GetName(),
-						"error":     err.Error(),
-					})
-
-					return err
 				}
 
 				procedureWrapper := func(procedure ApiProcedure) turnpike.BasicMethodHandler {
@@ -114,9 +104,9 @@ func (s *ApiService) Run(wg *sync.WaitGroup) error {
 							return simple.Run(args, kwargs)
 						}
 
-						s.logger.Error("Error procedure interace", map[string]interface{}{
+						c.logger.Error("Error procedure interace", map[string]interface{}{
 							"procedure": name,
-							"service":   service.GetName(),
+							"service":   cmp.GetName(),
 							"error":     err.Error(),
 						})
 
@@ -127,19 +117,19 @@ func (s *ApiService) Run(wg *sync.WaitGroup) error {
 				}
 
 				if err = client.BasicRegister(name, procedureWrapper(procedure)); err != nil {
-					s.logger.Error("Error register api procedure", map[string]interface{}{
+					c.logger.Error("Error register api procedure", map[string]interface{}{
 						"procedure": name,
-						"service":   service.GetName(),
+						"service":   cmp.GetName(),
 						"error":     err.Error(),
 					})
 					// ignore error
 				} else {
-					s.logger.Debug("Register procedure", map[string]interface{}{
+					c.logger.Debug("Register procedure", map[string]interface{}{
 						"procedure": name,
-						"service":   service.GetName(),
+						"service":   cmp.GetName(),
 					})
 				}
-				s.procedures = append(s.procedures, procedure)
+				c.procedures = append(c.procedures, procedure)
 			}
 		}
 	}
@@ -149,9 +139,9 @@ func (s *ApiService) Run(wg *sync.WaitGroup) error {
 
 		// TODO: ssl
 
-		addr := fmt.Sprintf("%s:%d", s.config.GetString("api.host"), s.config.GetInt64("api.port"))
+		addr := fmt.Sprintf("%s:%d", c.config.GetString("api.host"), c.config.GetInt64("api.port"))
 
-		s.logger.Info("Running service", map[string]interface{}{
+		c.logger.Info("Running service", map[string]interface{}{
 			"addr": addr,
 			"pid":  os.Getpid(),
 		})
@@ -169,24 +159,24 @@ func (s *ApiService) Run(wg *sync.WaitGroup) error {
 			// FiXME: Magic
 			delete(r.Header, "Origin")
 
-			s.logger.Infof("Connection from %s", r.RemoteAddr)
+			c.logger.Infof("Connection from %s", r.RemoteAddr)
 			handler.ServeHTTP(w, r)
 		})
 
 		if err := server.ListenAndServe(); err != nil {
-			s.logger.Fatalf("Could not start api [%d]: %s\n", os.Getpid(), err.Error())
+			c.logger.Fatalf("Could not start api [%d]: %s\n", os.Getpid(), err.Error())
 		}
 	}(handler)
 
 	return nil
 }
 
-func (s *ApiService) GetProcedures() []ApiProcedure {
-	return s.procedures
+func (c *Component) GetProcedures() []ApiProcedure {
+	return c.procedures
 }
 
-func (s *ApiService) GetProcedure(procedure string) ApiProcedure {
-	for _, p := range s.procedures {
+func (c *Component) GetProcedure(procedure string) ApiProcedure {
+	for _, p := range c.procedures {
 		if p.GetName() == procedure {
 			return p
 		}
@@ -195,12 +185,12 @@ func (s *ApiService) GetProcedure(procedure string) ApiProcedure {
 	return nil
 }
 
-func (s *ApiService) HasProcedure(procedure string) bool {
-	return s.GetProcedure(procedure) != nil
+func (c *Component) HasProcedure(procedure string) bool {
+	return c.GetProcedure(procedure) != nil
 }
 
-func (s *ApiService) GetClient() (*turnpike.Client, error) {
-	addr := fmt.Sprintf("ws://%s:%d/", s.config.GetString("api.host"), s.config.GetInt64("api.port"))
+func (c *Component) GetClient() (*turnpike.Client, error) {
+	addr := fmt.Sprintf("ws://%s:%d/", c.config.GetString("api.host"), c.config.GetInt64("api.port"))
 
 	client, err := turnpike.NewWebsocketClient(turnpike.JSON, addr, nil, nil)
 	if err != nil {

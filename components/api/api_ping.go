@@ -1,11 +1,11 @@
-package service
+package api
 
 import (
 	"gopkg.in/jcelliott/turnpike.v2"
 )
 
 type PingProcedure struct {
-	AbstractApiProcedure
+	Procedure
 }
 
 func (p *PingProcedure) GetName() string {

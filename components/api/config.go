@@ -1,7 +1,7 @@
-package service
+package api
 
 import (
-	"github.com/kihamo/shadow/resource/config"
+	"github.com/kihamo/shadow/components/config"
 )
 
 const (
@@ -12,7 +12,7 @@ const (
 	ConfigApiSecureKey     = "api.secure.key"
 )
 
-func (s *ApiService) GetConfigVariables() []config.Variable {
+func (c *Component) GetConfigVariables() []config.Variable {
 	return []config.Variable{
 		{
 			Key:     ConfigApiHost,

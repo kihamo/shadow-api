@@ -1,7 +1,7 @@
-package service
+package api
 
 import (
-	"github.com/kihamo/shadow/resource/metrics"
+	"github.com/kihamo/shadow/components/metrics"
 )
 
 const (
@@ -12,6 +12,6 @@ var (
 	metricApiProcedureExecuteTime metrics.Timer
 )
 
-func (r *ApiService) MetricsRegister(m *metrics.Resource) {
+func (c *Component) MetricsRegister(m *metrics.Component) {
 	metricApiProcedureExecuteTime = m.NewTimer(MetricApiProcedureExecuteTime)
 }
