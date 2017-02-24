@@ -23,7 +23,8 @@ type Component struct {
 	config      *config.Component
 	logger      logger.Logger
 
-	procedures []ApiProcedure
+	turnpikeLogger *Logger
+	procedures     []ApiProcedure
 }
 
 func (c *Component) GetName() string {
@@ -48,8 +49,8 @@ func (c *Component) Init(a shadow.Application) error {
 
 func (c *Component) Run(wg *sync.WaitGroup) error {
 	c.logger = logger.NewOrNop(c.GetName(), c.application)
-
-	turnpike.SetLogger(c.logger)
+	c.turnpikeLogger = NewLogger(c.logger)
+	turnpike.SetLogger(c.turnpikeLogger)
 
 	handler := turnpike.NewBasicWebsocketServer(c.GetName())
 	client, err := handler.GetLocalClient(c.GetName(), nil)

@@ -5,11 +5,9 @@ import (
 )
 
 const (
-	ConfigApiHost          = "api.host"
-	ConfigApiPort          = "api.port"
-	ConfigApiSecureEnabled = "api.secure.enabled"
-	ConfigApiSecureCrt     = "api.secure.crt"
-	ConfigApiSecureKey     = "api.secure.key"
+	ConfigApiHost           = "api.host"
+	ConfigApiPort           = "api.port"
+	ConfigApiLoggingEnabled = "api.loggin.enable"
 )
 
 func (c *Component) GetConfigVariables() []config.Variable {
@@ -27,20 +25,25 @@ func (c *Component) GetConfigVariables() []config.Variable {
 			Type:    config.ValueTypeInt,
 		},
 		{
-			Key:     ConfigApiSecureEnabled,
-			Default: false,
-			Usage:   "API enable SSL",
-			Type:    config.ValueTypeBool,
+			Key:      ConfigApiLoggingEnabled,
+			Default:  true,
+			Usage:    "API enable logging",
+			Type:     config.ValueTypeBool,
+			Editable: true,
 		},
-		{
-			Key:   ConfigApiSecureCrt,
-			Usage: "API path to SSL crt file",
-			Type:  config.ValueTypeString,
-		},
-		{
-			Key:   ConfigApiSecureKey,
-			Usage: "API path to SSL key file",
-			Type:  config.ValueTypeString,
-		},
+	}
+}
+
+func (c *Component) GetConfigWatchers() map[string][]config.Watcher {
+	return map[string][]config.Watcher{
+		ConfigApiLoggingEnabled: {c.watchApiLoggingEnabled},
+	}
+}
+
+func (c *Component) watchApiLoggingEnabled(_ string, newValue interface{}, _ interface{}) {
+	if newValue.(bool) {
+		c.turnpikeLogger.On()
+	} else {
+		c.turnpikeLogger.Off()
 	}
 }
