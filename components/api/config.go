@@ -7,7 +7,7 @@ import (
 const (
 	ConfigApiHost           = "api.host"
 	ConfigApiPort           = "api.port"
-	ConfigApiLoggingEnabled = "api.loggin.enable"
+	ConfigApiLoggingEnabled = "api.logging.enable"
 )
 
 func (c *Component) GetConfigVariables() []config.Variable {
