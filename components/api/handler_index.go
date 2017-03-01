@@ -23,7 +23,7 @@ func (h *IndexHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		host = s[0]
 	}
 
-	h.Render(r.Context(), "api", "index", map[string]interface{}{
+	h.Render(r.Context(), ComponentName, "index", map[string]interface{}{
 		"apiUrl":     fmt.Sprintf("ws://%s:%d/", host, config.GetInt64(ConfigApiPort)),
 		"procedures": h.component.GetProcedures(),
 	})
