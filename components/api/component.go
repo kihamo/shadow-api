@@ -49,7 +49,14 @@ func (c *Component) Init(a shadow.Application) error {
 
 func (c *Component) Run(wg *sync.WaitGroup) error {
 	c.logger = logger.NewOrNop(c.GetName(), c.application)
+
 	c.turnpikeLogger = NewLogger(c.logger)
+	if c.config.GetBool(ConfigApiLoggingEnabled) {
+		c.turnpikeLogger.On()
+	} else {
+		c.turnpikeLogger.Off()
+	}
+
 	turnpike.SetLogger(c.turnpikeLogger)
 
 	handler := turnpike.NewBasicWebsocketServer(c.GetName())
