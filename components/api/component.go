@@ -14,6 +14,10 @@ import (
 	"gopkg.in/jcelliott/turnpike.v2"
 )
 
+const (
+	ComponentName = "api"
+)
+
 type ServiceApiHandler interface {
 	GetApiProcedures() []ApiProcedure
 }
@@ -28,15 +32,30 @@ type Component struct {
 }
 
 func (c *Component) GetName() string {
-	return "api"
+	return ComponentName
 }
 
 func (c *Component) GetVersion() string {
 	return "1.0.0"
 }
 
+func (c *Component) GetDependencies() []shadow.Dependency {
+	return []shadow.Dependency{
+		{
+			Name:     config.ComponentName,
+			Required: true,
+		},
+		{
+			Name: logger.ComponentName,
+		},
+		{
+			Name: metrics.ComponentName,
+		},
+	}
+}
+
 func (c *Component) Init(a shadow.Application) error {
-	cmpConfig, err := a.GetComponent("config")
+	cmpConfig, err := a.GetComponent(config.ComponentName)
 	if err != nil {
 		return err
 	}
@@ -65,7 +84,12 @@ func (c *Component) Run(wg *sync.WaitGroup) error {
 		return err
 	}
 
-	for _, cmp := range c.application.GetComponents() {
+	components, err := c.application.GetComponents()
+	if err != nil {
+		return err
+	}
+
+	for _, cmp := range components {
 		if cmpApi, ok := cmp.(ServiceApiHandler); ok {
 			for _, procedure := range cmpApi.GetApiProcedures() {
 				name := procedure.GetName()
@@ -147,7 +171,7 @@ func (c *Component) Run(wg *sync.WaitGroup) error {
 
 		// TODO: ssl
 
-		addr := fmt.Sprintf("%s:%d", c.config.GetString("api.host"), c.config.GetInt64("api.port"))
+		addr := fmt.Sprintf("%s:%d", c.config.GetString(ConfigApiHost), c.config.GetInt64(ConfigApiPort))
 
 		c.logger.Info("Running service", map[string]interface{}{
 			"addr": addr,

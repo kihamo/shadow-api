@@ -14,17 +14,17 @@ import (
 
 func main() {
 	application, err := shadow.NewApp(
-		[]shadow.Component{
-			new(config.Component),
-			new(logger.Component),
-			new(metrics.Component),
-			new(alerts.Component),
-			new(dashboard.Component),
-			new(api.Component),
-		},
 		"Api",
 		"1.0",
 		"12345-full",
+		[]shadow.Component{
+			new(api.Component),
+			new(alerts.Component),
+			new(config.Component),
+			new(dashboard.Component),
+			new(logger.Component),
+			new(metrics.Component),
+		},
 	)
 
 	if err != nil {
