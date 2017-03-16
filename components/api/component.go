@@ -191,7 +191,10 @@ func (c *Component) Run(wg *sync.WaitGroup) error {
 			// FiXME: Magic
 			delete(r.Header, "Origin")
 
-			c.logger.Infof("Connection from %s", r.RemoteAddr)
+			if c.config.GetBool(ConfigApiLoggingEnabled) {
+				c.logger.Infof("Connection from %s", r.RemoteAddr)
+			}
+
 			handler.ServeHTTP(w, r)
 		})
 
