@@ -11,6 +11,7 @@ import (
 	"github.com/kihamo/shadow/components/config"
 	"github.com/kihamo/shadow/components/logger"
 	"github.com/kihamo/shadow/components/metrics"
+	"github.com/kihamo/snitch"
 	"gopkg.in/jcelliott/turnpike.v2"
 )
 
@@ -65,7 +66,7 @@ func (c *Component) Run(wg *sync.WaitGroup) error {
 	c.logger = logger.NewOrNop(c.GetName(), c.application)
 
 	c.turnpikeLogger = NewLogger(c.logger)
-	if c.config.GetBool(ConfigApiLoggingEnabled) {
+	if c.config.GetBool(ConfigLoggingEnabled) {
 		c.turnpikeLogger.On()
 	} else {
 		c.turnpikeLogger.Off()
@@ -84,6 +85,8 @@ func (c *Component) Run(wg *sync.WaitGroup) error {
 		return err
 	}
 
+	metricsEnable := c.application.HasComponent(metrics.ComponentName)
+
 	for _, cmp := range components {
 		if cmpApi, ok := cmp.(ServiceApiHandler); ok {
 			for _, procedure := range cmpApi.GetApiProcedures() {
@@ -99,16 +102,22 @@ func (c *Component) Run(wg *sync.WaitGroup) error {
 				}
 
 				procedureWrapper := func(procedure ApiProcedure) turnpike.BasicMethodHandler {
-					var procedureMetricApiProcedureExecuteTime metrics.Timer
-					if metricApiProcedureExecuteTime != nil {
-						procedureMetricApiProcedureExecuteTime = metricApiProcedureExecuteTime.With("procedure", procedure.GetName())
+					var metricProcedureExecuteTime snitch.Timer
+
+					if metricsEnable {
+						metricProcedureExecuteTime = snitch.NewTimer(MetricProcedureExecuteTime, "procedure", procedure.GetName())
+						c.application.GetComponent(metrics.ComponentName).(*metrics.Component).Register(metricProcedureExecuteTime)
 					}
 
 					return func(args []interface{}, kwargs map[string]interface{}) *turnpike.CallResult {
 						beforeTime := time.Now()
 						defer func() {
-							if procedureMetricApiProcedureExecuteTime != nil {
-								procedureMetricApiProcedureExecuteTime.ObserveDurationByTime(beforeTime)
+							if metricExecuteTime != nil {
+								metricExecuteTime.UpdateSince(beforeTime)
+							}
+
+							if metricProcedureExecuteTime != nil {
+								metricProcedureExecuteTime.UpdateSince(beforeTime)
 							}
 						}()
 
@@ -166,7 +175,7 @@ func (c *Component) Run(wg *sync.WaitGroup) error {
 
 		// TODO: ssl
 
-		addr := fmt.Sprintf("%s:%d", c.config.GetString(ConfigApiHost), c.config.GetInt64(ConfigApiPort))
+		addr := fmt.Sprintf("%s:%d", c.config.GetString(ConfigHost), c.config.GetInt64(ConfigPort))
 
 		c.logger.Info("Running service", map[string]interface{}{
 			"addr": addr,
@@ -186,7 +195,7 @@ func (c *Component) Run(wg *sync.WaitGroup) error {
 			// FiXME: Magic
 			delete(r.Header, "Origin")
 
-			if c.config.GetBool(ConfigApiLoggingEnabled) {
+			if c.config.GetBool(ConfigLoggingEnabled) {
 				c.logger.Infof("Connection from %s", r.RemoteAddr)
 			}
 

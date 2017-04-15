@@ -5,27 +5,27 @@ import (
 )
 
 const (
-	ConfigApiHost           = "api.host"
-	ConfigApiPort           = "api.port"
-	ConfigApiLoggingEnabled = "api.logging.enable"
+	ConfigHost           = ComponentName + ".host"
+	ConfigPort           = ComponentName + ".port"
+	ConfigLoggingEnabled = ComponentName + ".logging.enable"
 )
 
 func (c *Component) GetConfigVariables() []config.Variable {
 	return []config.Variable{
 		{
-			Key:     ConfigApiHost,
+			Key:     ConfigHost,
 			Default: "localhost",
 			Usage:   "API socket host",
 			Type:    config.ValueTypeString,
 		},
 		{
-			Key:     ConfigApiPort,
+			Key:     ConfigPort,
 			Default: 8001,
 			Usage:   "API socket port",
 			Type:    config.ValueTypeInt,
 		},
 		{
-			Key:      ConfigApiLoggingEnabled,
+			Key:      ConfigLoggingEnabled,
 			Default:  true,
 			Usage:    "API enable logging",
 			Type:     config.ValueTypeBool,
@@ -36,11 +36,11 @@ func (c *Component) GetConfigVariables() []config.Variable {
 
 func (c *Component) GetConfigWatchers() map[string][]config.Watcher {
 	return map[string][]config.Watcher{
-		ConfigApiLoggingEnabled: {c.watchApiLoggingEnabled},
+		ConfigLoggingEnabled: {c.watchLoggingEnabled},
 	}
 }
 
-func (c *Component) watchApiLoggingEnabled(_ string, newValue interface{}, _ interface{}) {
+func (c *Component) watchLoggingEnabled(_ string, newValue interface{}, _ interface{}) {
 	if newValue.(bool) {
 		c.turnpikeLogger.On()
 	} else {

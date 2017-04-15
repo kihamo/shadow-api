@@ -1,17 +1,20 @@
 package api
 
 import (
-	"github.com/kihamo/shadow/components/metrics"
+	"github.com/kihamo/snitch"
 )
 
 const (
-	MetricApiProcedureExecuteTime = "api.procedure.execute_time"
+	MetricExecuteTime          = ComponentName + ".execute_time"
+	MetricProcedureExecuteTime = ComponentName + ".procedure.execute_time"
 )
 
 var (
-	metricApiProcedureExecuteTime metrics.Timer
+	metricExecuteTime snitch.Timer
 )
 
-func (c *Component) MetricsRegister(m *metrics.Component) {
-	metricApiProcedureExecuteTime = m.NewTimer(MetricApiProcedureExecuteTime)
+func (c *Component) Metrics() snitch.Collector {
+	metricExecuteTime = snitch.NewTimer(MetricExecuteTime)
+
+	return metricExecuteTime
 }
