@@ -105,7 +105,7 @@ func (c *Component) Run(wg *sync.WaitGroup) error {
 					var metricProcedureExecuteTime snitch.Timer
 
 					if metricsEnable {
-						metricProcedureExecuteTime = snitch.NewTimer(MetricProcedureExecuteTime, "procedure", procedure.GetName())
+						metricProcedureExecuteTime = snitch.NewTimer(MetricProcedureExecuteTime, "Total procedure duration", "procedure", procedure.GetName())
 						c.application.GetComponent(metrics.ComponentName).(*metrics.Component).Register(metricProcedureExecuteTime)
 					}
 

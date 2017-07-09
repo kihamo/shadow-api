@@ -5,8 +5,8 @@ import (
 )
 
 const (
-	MetricExecuteTime          = ComponentName + ".execute_time"
-	MetricProcedureExecuteTime = ComponentName + ".procedure.execute_time"
+	MetricExecuteTime          = ComponentName + "_request_duration_seconds"
+	MetricProcedureExecuteTime = ComponentName + "_procedure_duration_seconds"
 )
 
 var (
@@ -14,7 +14,7 @@ var (
 )
 
 func (c *Component) Metrics() snitch.Collector {
-	metricExecuteTime = snitch.NewTimer(MetricExecuteTime)
+	metricExecuteTime = snitch.NewTimer(MetricExecuteTime, "Total request duration")
 
 	return metricExecuteTime
 }
