@@ -3,7 +3,7 @@
 BASE_PATH=$PWD
 
 # versions
-CMP_API="1.0."
+CMP_API="2.0."
 
 for CMP in `find components -maxdepth 1 -type d ! -path components`
 do
@@ -34,4 +34,4 @@ done
 cd $BASE_PATH
 goimports -w ./
 
-cd $BASE_PATH/components/api && go-bindata-assetfs -pkg=api templates/... public/...
+cd $BASE_PATH/components/api && go-bindata-assetfs -pkg=api templates/... assets/...

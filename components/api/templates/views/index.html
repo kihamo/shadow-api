@@ -1,114 +1,94 @@
-{{ define "head" }}
-<style type="text/css">
-    table td {
-        cursor: pointer;
-    }
-</style>
-{{ end }}
-
 {{ define "content" }}
-<div class="page-header">
-    <h1>API</h1>
-</div>
+<div class="x_panel">
+    <div class="x_title">
+        <h2>API</h2>
+        <div class="clearfix"></div>
+    </div>
+    <div class="x_content">
+        <form id="call" class="form-horizontal" role="form">
+            <div class="item form-group">
+                <label for="procedure">
+                    Procedure <span class="required">*</span>
+                </label>
+                <select class="form-control select2" style="width:100%" name="procedure" id="procedure" required="required"{{ if .procedures }} placeholder="{{ (index .procedures 0).GetName }}"{{ end }}>
+                    {{ range $i, $procedure := .procedures }}
+                    <option value="{{ $procedure.GetName }}">{{ $procedure.GetName }}</option>
+                    {{ end }}
+                </select>
+            </div>
 
-<div class="panel panel-default">
-    <div class="panel-heading">Call procedure</div>
-    <div class="panel-body">
-        <form id="call">
+            <div class="col-md-6 col-sm-6 col-xs-12 call-args" id="args">
+                <label>Args</label>
+
+                <div class="input-group">
+                    <input type="text" class="form-control">
+                    <div class="input-group-btn">
+                        <button type="button" class="btn btn-danger">
+                            <span class="fa fa-trash-o"></span>
+                        </button>
+                        <button type="button" class="btn btn-info">
+                            <span class="fa fa-plus"></span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6 col-sm-6 col-xs-12 call-args" id="kwargs">
+                <label>KwArgs</label>
+
+                <div class="input-group">
+                    <div class="input-group-btn">
+                        <input type="text" class="form-control">
+                    </div>
+                    <input type="text" class="form-control">
+                    <div class="input-group-btn">
+                        <button type="button" class="btn btn-danger">
+                            <span class="fa fa-trash-o"></span>
+                        </button>
+                        <button type="button" class="btn btn-info">
+                            <span class="fa fa-plus"></span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="clearfix"></div>
+
+            <div id="result" class="call-result" style="display:none">
+                <hr />
+                <button type="button" class="close">&times;</button>
+                <div class="response" style="white-space:pre-wrap"></div>
+            </div>
+
+            <div class="ln_solid"></div>
+
             <div class="form-group">
-                <label for="procedure">Procedure</label>
-                <input type="text" class="form-control" id="procedure" required="required"
-                       placeholder="{{ (index .procedures 0).GetName }}">
-            </div>
-
-            <div class="row">
-                <div class="col-lg-6">
-                    <div id="arg" class="panel panel-default">
-                        <div class="panel-heading">Args
-                            <div class="btn-group pull-right">
-                                <button type="button" class="btn btn-success btn-xs" id="arg-add">
-                                    <i class="fa fa-plus"></i>
-                                </button>
-                                <button type="button" class="btn btn-danger btn-xs" id="arg-clear">
-                                    <i class="fa fa-trash-o"></i>
-                                </button>
-                            </div>
-                        </div>
-                        <div class="panel-body">
-                            <div class="form-group form-inline">
-                                <button type="button" class="btn btn-danger btn-small remove">
-                                    <i class="fa fa-trash-o"></i>
-                                </button>
-                                <input type="text" class="form-control">
-                            </div>
-                        </div>
-                    </div>
+                <div class="text-center">
+                    <input type="submit" class="btn btn-success" value="Call" />
                 </div>
-                <div class="col-lg-6">
-                    <div id="kwarg" class="form-group">
-                        <div class="panel panel-default">
-                            <div class="panel-heading">Kwargs
-                                <div class="btn-group pull-right">
-                                    <button type="button" class="btn btn-success btn-xs" id="kwarg-add">
-                                        <i class="fa fa-plus"></i>
-                                    </button>
-                                    <button type="button" class="btn btn-danger btn-xs" id="kwarg-clear">
-                                        <i class="fa fa-trash-o"></i>
-                                    </button>
-                                </div>
-                            </div>
-                            <div class="panel-body">
-                                <div class="form-group form-inline">
-                                    <button type="button" class="btn btn-danger btn-small remove">
-                                        <i class="fa fa-trash-o"></i>
-                                    </button>
-                                    <input type="text" class="form-control">
-                                    <input type="text" class="form-control">
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="text-center">
-                <button type="submit" class="btn btn-success">Call procedure</button>
-            </div>
-            <div id="result" style="display:none">
-                <h5>Response</h5>
-                <pre></pre>
             </div>
         </form>
     </div>
 </div>
+{{ end }}
 
-<div class="panel panel-default">
-    <div class="panel-heading">Procedures</div>
-    <div class="panel-body">
-        <div class="table-responsive">
-        <table class="table table-hover">
-            <thead>
-            <tr>
-                <th>Name</th>
-            </tr>
-            </thead>
-            <tbody>
-            {{ range $i, $procedure := .procedures }}
-            <tr>
-                <td>{{ $procedure.GetName }}</td>
-            </tr>
-            {{ end }}
-            </tbody>
-        </table>
-        </div>
-    </div>
-</div>
+{{ define "head" }}
+<style type="text/css">
+    .input-group-btn button {
+        margin-right: 0;
+        margin-bottom: 0;
+    }
+
+    #kwargs .input-group .input-group-btn:first-child {
+        width:auto;
+    }
+</style>
 {{ end }}
 
 {{ define "js" }}
-<script src="/api/js/autobahn.min.js"></script>
+<script src="/api/assets/vendors/autobahn/js/autobahn.min.js?v={{ .Application.build }}"></script>
 
-<script>
+<script type="application/javascript">
     AUTOBAHN_DEBUG = true;
     var session = null;
     var when;
@@ -135,71 +115,40 @@
     connection.open();
 
     $(function () {
-        var procedure = $('#procedure');
-        var result = $('#result');
-        var args = $('#arg .panel-body');
-        var argsAdd = $('#arg-add');
-        var argsClear = $('#arg-clear');
-        var kwargsAdd = $('#kwarg-add');
-        var kwargsClear = $('#kwarg-clear');
-        var kwargs = $('#kwarg .panel-body');
+        var
+            result = $('#result'),
+            addAgr = function() {
+                $('#args').append('<div class="input-group"><input type="text" class="form-control"><div class="input-group-btn"><button type="button" class="btn btn-danger"><span class="fa fa-trash-o"></span></button><button type="button" class="btn btn-info"><span class="fa fa-plus"></span></button></div></div>');
+            },
+            addKwArg = function() {
+                $('#kwargs').append('<div class="input-group"><div class="input-group-btn"><input type="text" class="form-control"></div><input type="text" class="form-control"><div class="input-group-btn"><button type="button" class="btn btn-danger"><span class="fa fa-trash-o"></span></button><button type="button" class="btn btn-info"><span class="fa fa-plus"></span></button></div></div>');
+            }
+        ;
 
-        function remove() {
-            $('.remove').click(function () {
-                $(this).parent().remove();
-
-                if (args.is(':empty')){
-                    argsAdd.click();
-                }
-
-                if (kwargs.is(':empty')){
-                    kwargsAdd.click();
-                }
-            });
-        }
-
-        $('table td').click(function () {
-            procedure.val($(this).text())
-
-            /*
-             argsClear.click();
-             kwargsClear.click();
-             */
+        $('.call-result button.close').click(function(){
+            $(this).parent().hide();
         });
 
-        argsAdd.click(function () {
-            var row = $('<div class="form-group form-inline">');
-            row.append('<button type="button" class="btn btn-danger btn-small remove"><i class="fa fa-trash-o"></i></button>');
-            row.append('<input type="text" class="form-control">');
-
-            args.append(row);
-            remove();
-        });
-        argsClear.click(function () {
-            args.empty();
-            argsAdd.click();
+        $(document).on('click', '#call button:has(.fa-plus)', function() {
+            $(this).parents('#args').length ? addAgr() : addKwArg();
         });
 
-        kwargsAdd.click(function () {
-            var row = $('<div class="form-group form-inline">');
-            row.append('<button type="button" class="btn btn-danger btn-small remove"><i class="fa fa-trash-o"></i></button>');
-            row.append('<input type="text" class="form-control">');
-            row.append('<input type="text" class="form-control">');
+        $(document).on('click', '#call button:has(.fa-trash-o)', function() {
+            var el = $(this);
 
-            kwargs.append(row);
-            remove();
-        });
-        kwargsClear.click(function () {
-            kwargs.empty();
-            kwargsAdd.click();
+            if (el.parents('.call-args').find('.input-group').length == 1) {
+                el.parents('#args').length ? addAgr() : addKwArg();
+            }
+
+            el.parents('.input-group').remove();
         });
 
         $('#call').submit(function () {
-            var a = [];
-            var k = {};
+            var a = [], k = {};
 
-            args.find('input').each(function (i, e) {
+            $('#args input').each(function (i, e) {
                 var value = $(e).val();
+
                 if (value.length) {
                     try {
                         value = JSON.parse(value);
@@ -213,9 +162,10 @@
                     a.push(value);
                 }
             });
-            kwargs.find('input:even').each(function (i, e) {
-                var key = $(e).val();
-                var value = $(e).next().val();
+
+            $('#kwargs input:even').each(function (i, e) {
+                var key = $(e).val(),
+                    value = $(e).parent().next().val();
 
                 if (key.length && value.length) {
                     try {
@@ -233,19 +183,17 @@
 
             session.call($('#procedure').val(), a, k).then(
                     function (r) {
-                        result.find('pre').html(JSON.stringify(r, null, '\t'));
+                        result.find('.response').html(JSON.stringify(r, null, '\t'));
                         result.show();
                     },
                     function (e) {
-                        result.find('pre').html(JSON.stringify(e, null, '\t'));
+                        result.find('.response').html(JSON.stringify(e, null, '\t'));
                         result.show();
                     }
             );
 
             return false;
         });
-
-        remove();
     })
 </script>
 {{ end }}
