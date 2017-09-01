@@ -1,0 +1,5 @@
+package: github.com/kihamo/shadow-api
+import:
+- package: github.com/kihamo/shadow
+- package: gopkg.in/jcelliott/turnpike.v2
+  version: fd62c756857599590cc1f661bd3e4e2ecf25cfd8
