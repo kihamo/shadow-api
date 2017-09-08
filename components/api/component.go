@@ -11,7 +11,6 @@ import (
 	"github.com/kihamo/shadow/components/config"
 	"github.com/kihamo/shadow/components/logger"
 	"github.com/kihamo/shadow/components/metrics"
-	"github.com/kihamo/snitch"
 	"gopkg.in/jcelliott/turnpike.v2"
 )
 
@@ -85,8 +84,6 @@ func (c *Component) Run(wg *sync.WaitGroup) error {
 		return err
 	}
 
-	metricsEnable := c.application.HasComponent(metrics.ComponentName)
-
 	for _, cmp := range components {
 		if cmpApi, ok := cmp.(ServiceApiHandler); ok {
 			for _, procedure := range cmpApi.GetApiProcedures() {
@@ -102,22 +99,12 @@ func (c *Component) Run(wg *sync.WaitGroup) error {
 				}
 
 				procedureWrapper := func(procedure ApiProcedure) turnpike.BasicMethodHandler {
-					var metricProcedureExecuteTime snitch.Timer
-
-					if metricsEnable {
-						metricProcedureExecuteTime = snitch.NewTimer(MetricProcedureExecuteTime, "Total procedure duration", "procedure", procedure.GetName())
-						c.application.GetComponent(metrics.ComponentName).(*metrics.Component).Register(metricProcedureExecuteTime)
-					}
-
 					return func(args []interface{}, kwargs map[string]interface{}) *turnpike.CallResult {
 						beforeTime := time.Now()
 						defer func() {
 							if metricExecuteTime != nil {
 								metricExecuteTime.UpdateSince(beforeTime)
-							}
-
-							if metricProcedureExecuteTime != nil {
-								metricProcedureExecuteTime.UpdateSince(beforeTime)
+								metricExecuteTime.With("procedure", procedure.GetName()).UpdateSince(beforeTime)
 							}
 						}()
 
