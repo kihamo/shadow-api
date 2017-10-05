@@ -1,11 +1,12 @@
-package api
+package procedures
 
 import (
+	"github.com/kihamo/shadow-api/components/api"
 	"gopkg.in/jcelliott/turnpike.v2"
 )
 
 type PingProcedure struct {
-	Procedure
+	api.ProcedureBase
 }
 
 func (p *PingProcedure) GetName() string {

@@ -4,38 +4,37 @@ import (
 	"gopkg.in/jcelliott/turnpike.v2"
 )
 
-const (
-	ErrorUnknownProcedure = "api.unknown-procedure"
-	ErrorInvalidArgument  = "api.invalid-argument"
-)
+type HasApiProcedures interface {
+	GetApiProcedures() []Procedure
+}
 
-type ApiProcedure interface {
+type Procedure interface {
 	GetName() string
 }
 
-type ApiProcedureSimple interface {
-	ApiProcedure
+type ProcedureSimple interface {
+	Procedure
 	Run([]interface{}, map[string]interface{}) *turnpike.CallResult
 }
 
-type ApiProcedureRequest interface {
-	ApiProcedure
+type ProcedureWithRequest interface {
+	Procedure
 	GetRequest() interface{}
 	Run(interface{}) *turnpike.CallResult
 }
 
-type Procedure struct {
-	ApiProcedure
+type ProcedureBase struct {
+	Procedure
 }
 
-func (p *Procedure) GetResult(args []interface{}, kwargs map[string]interface{}) *turnpike.CallResult {
+func (p *ProcedureBase) GetResult(args []interface{}, kwargs map[string]interface{}) *turnpike.CallResult {
 	return &turnpike.CallResult{
 		Args:   args,
 		Kwargs: kwargs,
 	}
 }
 
-func (p *Procedure) GetError(err string) *turnpike.CallResult {
+func (p *ProcedureBase) GetError(err string) *turnpike.CallResult {
 	return &turnpike.CallResult{
 		Err: turnpike.URI(err),
 	}

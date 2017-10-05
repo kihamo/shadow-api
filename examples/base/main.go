@@ -4,12 +4,12 @@ import (
 	"log"
 
 	"github.com/kihamo/shadow"
-	"github.com/kihamo/shadow-api/components/api"
-	"github.com/kihamo/shadow/components/alerts"
-	"github.com/kihamo/shadow/components/config"
-	"github.com/kihamo/shadow/components/dashboard"
-	"github.com/kihamo/shadow/components/logger"
-	"github.com/kihamo/shadow/components/metrics"
+	api "github.com/kihamo/shadow-api/components/api/instance"
+	alerts "github.com/kihamo/shadow/components/alerts/instance"
+	config "github.com/kihamo/shadow/components/config/instance"
+	dashboard "github.com/kihamo/shadow/components/dashboard/instance"
+	logger "github.com/kihamo/shadow/components/logger/instance"
+	metrics "github.com/kihamo/shadow/components/metrics/instance"
 )
 
 func main() {
@@ -18,12 +18,12 @@ func main() {
 		"1.0",
 		"12345-full",
 		[]shadow.Component{
-			new(api.Component),
-			new(alerts.Component),
-			new(config.Component),
-			new(dashboard.Component),
-			new(logger.Component),
-			new(metrics.Component),
+			api.NewComponent(),
+			alerts.NewComponent(),
+			config.NewComponent(),
+			dashboard.NewComponent(),
+			logger.NewComponent(),
+			metrics.NewComponent(),
 		},
 	)
 

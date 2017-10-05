@@ -1,11 +1,12 @@
-package api
+package internal
 
 import (
+	"github.com/kihamo/shadow-api/components/api"
 	"github.com/kihamo/snitch"
 )
 
 const (
-	MetricExecuteTime = ComponentName + "_request_duration_seconds"
+	MetricExecuteTime = api.ComponentName + "_request_duration_seconds"
 )
 
 var (
