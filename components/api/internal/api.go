@@ -7,7 +7,6 @@ import (
 
 func (c *Component) GetApiProcedures() []api.Procedure {
 	return []api.Procedure{
-		&procedures.PingProcedure{},
 		&procedures.VersionProcedure{
 			Application: c.application,
 		},
