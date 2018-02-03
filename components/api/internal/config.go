@@ -13,6 +13,7 @@ func (c *Component) GetConfigVariables() []config.Variable {
 			"localhost",
 			"API socket host",
 			false,
+			"Listen",
 			nil,
 			nil),
 		config.NewVariable(
@@ -21,6 +22,7 @@ func (c *Component) GetConfigVariables() []config.Variable {
 			8001,
 			"API socket port",
 			false,
+			"Listen",
 			nil,
 			nil),
 		config.NewVariable(
@@ -29,6 +31,7 @@ func (c *Component) GetConfigVariables() []config.Variable {
 			true,
 			"API enable logging",
 			true,
+			"Others",
 			nil,
 			nil),
 	}
