@@ -26,15 +26,15 @@ type Component struct {
 	procedures     []api.Procedure
 }
 
-func (c *Component) GetName() string {
+func (c *Component) Name() string {
 	return api.ComponentName
 }
 
-func (c *Component) GetVersion() string {
+func (c *Component) Version() string {
 	return api.ComponentVersion
 }
 
-func (c *Component) GetDependencies() []shadow.Dependency {
+func (c *Component) Dependencies() []shadow.Dependency {
 	return []shadow.Dependency{
 		{
 			Name:     config.ComponentName,
@@ -57,10 +57,10 @@ func (c *Component) Init(a shadow.Application) error {
 }
 
 func (c *Component) Run(wg *sync.WaitGroup) error {
-	c.logger = logger.NewOrNop(c.GetName(), c.application)
+	c.logger = logger.NewOrNop(c.Name(), c.application)
 
 	c.turnpikeLogger = NewLogger(c.logger)
-	if c.config.GetBool(api.ConfigLoggingEnabled) {
+	if c.config.Bool(api.ConfigLoggingEnabled) {
 		c.turnpikeLogger.On()
 	} else {
 		c.turnpikeLogger.Off()
@@ -68,8 +68,8 @@ func (c *Component) Run(wg *sync.WaitGroup) error {
 
 	turnpike.SetLogger(c.turnpikeLogger)
 
-	handler := turnpike.NewBasicWebsocketServer(c.GetName())
-	client, err := handler.GetLocalClient(c.GetName(), nil)
+	handler := turnpike.NewBasicWebsocketServer(c.Name())
+	client, err := handler.GetLocalClient(c.Name(), nil)
 	if err != nil {
 		return err
 	}
@@ -87,7 +87,7 @@ func (c *Component) Run(wg *sync.WaitGroup) error {
 				if c.HasProcedure(name) {
 					c.logger.Warn("Procedure already exists. Ignore procedure.", map[string]interface{}{
 						"procedure": name,
-						"service":   cmp.GetName(),
+						"service":   cmp.Name(),
 					})
 
 					continue
@@ -124,7 +124,7 @@ func (c *Component) Run(wg *sync.WaitGroup) error {
 
 						c.logger.Error("Error procedure interace", map[string]interface{}{
 							"procedure": name,
-							"service":   cmp.GetName(),
+							"service":   cmp.Name(),
 							"error":     err.Error(),
 						})
 
@@ -137,14 +137,14 @@ func (c *Component) Run(wg *sync.WaitGroup) error {
 				if err = client.BasicRegister(name, procedureWrapper(procedure)); err != nil {
 					c.logger.Error("Error register api procedure", map[string]interface{}{
 						"procedure": name,
-						"service":   cmp.GetName(),
+						"service":   cmp.Name(),
 						"error":     err.Error(),
 					})
 					// ignore error
 				} else {
 					c.logger.Debug("Register procedure", map[string]interface{}{
 						"procedure": name,
-						"service":   cmp.GetName(),
+						"service":   cmp.Name(),
 					})
 				}
 				c.procedures = append(c.procedures, procedure)
@@ -157,7 +157,7 @@ func (c *Component) Run(wg *sync.WaitGroup) error {
 
 		// TODO: ssl
 
-		addr := fmt.Sprintf("%s:%d", c.config.GetString(api.ConfigHost), c.config.GetInt64(api.ConfigPort))
+		addr := fmt.Sprintf("%s:%d", c.config.String(api.ConfigHost), c.config.Int64(api.ConfigPort))
 
 		c.logger.Info("Running service", map[string]interface{}{
 			"addr": addr,
@@ -177,7 +177,7 @@ func (c *Component) Run(wg *sync.WaitGroup) error {
 			// FiXME: Magic
 			delete(r.Header, "Origin")
 
-			if c.config.GetBool(api.ConfigLoggingEnabled) {
+			if c.config.Bool(api.ConfigLoggingEnabled) {
 				c.logger.Infof("Connection from %s", r.RemoteAddr)
 			}
 
@@ -211,7 +211,7 @@ func (c *Component) HasProcedure(procedure string) bool {
 }
 
 func (c *Component) GetClient() (*turnpike.Client, error) {
-	addr := fmt.Sprintf("ws://%s:%d/", c.config.GetString("api.host"), c.config.GetInt64("api.port"))
+	addr := fmt.Sprintf("ws://%s:%d/", c.config.String("api.host"), c.config.Int64("api.port"))
 
 	client, err := turnpike.NewWebsocketClient(turnpike.JSON, addr, nil, nil)
 	if err != nil {

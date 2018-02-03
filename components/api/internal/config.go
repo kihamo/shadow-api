@@ -5,7 +5,7 @@ import (
 	"github.com/kihamo/shadow/components/config"
 )
 
-func (c *Component) GetConfigVariables() []config.Variable {
+func (c *Component) ConfigVariables() []config.Variable {
 	return []config.Variable{
 		config.NewVariable(
 			api.ConfigHost,
@@ -37,9 +37,9 @@ func (c *Component) GetConfigVariables() []config.Variable {
 	}
 }
 
-func (c *Component) GetConfigWatchers() []config.Watcher {
+func (c *Component) ConfigWatchers() []config.Watcher {
 	return []config.Watcher{
-		config.NewWatcher(c.GetName(), []string{api.ConfigLoggingEnabled}, c.watchLoggingEnabled),
+		config.NewWatcher(c.Name(), []string{api.ConfigLoggingEnabled}, c.watchLoggingEnabled),
 	}
 }
 

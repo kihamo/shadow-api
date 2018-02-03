@@ -18,11 +18,11 @@ func (p *VersionProcedure) GetName() string {
 
 func (p *VersionProcedure) Run([]interface{}, map[string]interface{}) *turnpike.CallResult {
 	return p.GetResult(nil, map[string]interface{}{
-		"name":       p.Application.GetName(),
-		"version":    p.Application.GetVersion(),
-		"build":      p.Application.GetBuild(),
-		"build_date": p.Application.GetBuildDate(),
-		"start_date": p.Application.GetStartDate(),
-		"uptime":     p.Application.GetUptime(),
+		"name":       p.Application.Name(),
+		"version":    p.Application.Version(),
+		"build":      p.Application.Build(),
+		"build_date": p.Application.BuildDate(),
+		"start_date": p.Application.StartDate(),
+		"uptime":     p.Application.Uptime(),
 	})
 }
