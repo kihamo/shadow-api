@@ -24,6 +24,7 @@ type Component struct {
 
 	turnpikeLogger *Logger
 	procedures     []api.Procedure
+	metricEnabled  bool
 }
 
 func (c *Component) Name() string {
@@ -52,6 +53,7 @@ func (c *Component) Dependencies() []shadow.Dependency {
 func (c *Component) Init(a shadow.Application) error {
 	c.application = a
 	c.config = a.GetComponent(config.ComponentName).(config.Component)
+	c.metricEnabled = a.HasComponent(metrics.ComponentName)
 
 	return nil
 }
@@ -97,7 +99,7 @@ func (c *Component) Run(wg *sync.WaitGroup) error {
 					return func(args []interface{}, kwargs map[string]interface{}) *turnpike.CallResult {
 						beforeTime := time.Now()
 						defer func() {
-							if metricExecuteTime != nil {
+							if c.metricEnabled {
 								metricExecuteTime.UpdateSince(beforeTime)
 								metricExecuteTime.With("procedure", procedure.GetName()).UpdateSince(beforeTime)
 							}
